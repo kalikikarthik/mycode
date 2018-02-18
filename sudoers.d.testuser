@@ -1,0 +1,5 @@
+# This should be placed into /etc/sudoers.d/testuser to allow a non-privileged user
+# access to start/stop a fake node daemon that runs on port 80.
+
+testuser ALL=(ALL) NOPASSWD: /usr/sbin/service node start
+testuser ALL=(ALL) NOPASSWD: /usr/sbin/service node stop

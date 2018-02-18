@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# This is a hacked together fake service called "node" that works for a certain
+# coding test.  It works on Ubuntu by copying it to /etc/init.d and executing
+# via old school service command.  (E.g. service node start)
+
+### BEGIN INIT INFO
+# Provides:        node
+# Required-Start:  $network
+# Required-Stop:   $network
+# Default-Start:   2 3 4 5
+# Default-Stop:    1
+# Short-Description: Fake node service for code test
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+. /lib/lsb/init-functions
+
+DAEMON=/usr/bin/python
+DAEMON_OPTIONS="-m SimpleHTTPServer 80"
+DAEMON_DIR=/user/node/data
+PIDFILE=/var/run/node.pid
+
+test -x $DAEMON || exit 5
+
+LOCKFILE=/run/lock/node
+
+case $1 in
+	start)
+		log_daemon_msg "Starting node server" "node"
+		(
+			flock -w 180 9
+			start-stop-daemon -d $DAEMON_DIR -b --pidfile $PIDFILE --make-pidfile --start --exec $DAEMON -- $DAEMON_OPTIONS
+		) 9>$LOCKFILE
+		log_end_msg $?
+  		;;
+	stop)
+		log_daemon_msg "Stopping node server" "node"
+		start-stop-daemon --pidfile $PIDFILE --stop --remove-pidfile
+		log_end_msg $?
+		rm -f $PIDFILE
+  		;;
+	restart|force-reload)
+		$0 stop && sleep 2 && $0 start
+  		;;
+	try-restart)
+		if $0 status >/dev/null; then
+			$0 restart
+		else
+			exit 0
+		fi
+		;;
+	reload)
+		exit 3
+		;;
+	status)
+		status_of_proc $DAEMON "node server"
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|try-restart|force-reload|status}"
+		exit 2
+		;;
+esac
